@@ -1,0 +1,33 @@
+# Python environments and generated files
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local application data: SQLite databases and uploaded food photos
+instance/
+instance/uploads/
+uploads/
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.db
+*.db-*
+
+# Secrets and machine-specific configuration
+.env
+.env.*
+!.env.example
+
+# Downloaded model files and inference caches
+.cache/
+**/.cache/
+huggingface/
+model_cache/
+transformers_cache/
+**/models--*/
+*.safetensors
+pytorch_model*.bin
+*.pt
+*.pth

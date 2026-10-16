@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f7f8f2">
+    <title>{% block title %}Platewise — Food & nutrition{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="{{ url_for('main.index') }}" aria-label="Platewise home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="17" stroke="currentColor" stroke-width="2"/><circle cx="20" cy="20" r="10" stroke="currentColor" stroke-width="2"/><path d="M20 3v8m0 18v8M3 20h8m18 0h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="20" cy="20" r="3" fill="currentColor"/></svg>
+          </span>
+          <span>platewise<span class="brand-period">.</span></span>
+        </a>
+        <span class="sidebar-caption">YOUR SPACE</span>
+        <nav class="primary-nav" aria-label="Main navigation">
+          <a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}" href="{{ url_for('main.index') }}">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/></svg>
+            <span>Overview</span>
+          </a>
+          <a class="nav-link {% if request.endpoint == 'main.history' %}active{% endif %}" href="{{ url_for('main.history') }}">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 19V7A1.5 1.5 0 0 1 4 5.5Z"/><path d="M7.5 3v5m9-5v5M2.5 10.5h19m-14 4h3m2.5 0h3m-8.5 3h3"/></svg>
+            <span>Meal history</span>
+          </a>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="tip-card">
+            <span class="tip-sparkle">✳</span>
+            <strong>Small steps add up.</strong>
+            <p>A little awareness goes a long way. You're doing great.</p>
+          </div>
+          <div class="sidebar-footer">
+            <span class="avatar">P</span>
+            <span class="profile-name">Your food journal</span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div class="breadcrumb"><span>My nutrition</span><span class="breadcrumb-slash">/</span><strong>{% block page_name %}Overview{% endblock %}</strong></div>
+          <div class="topbar-date"><span class="status-dot"></span>Personal food journal</div>
+        </header>
+        <div class="page-content">
+          {% block content %}{% endblock %}
+        </div>
+        <footer class="page-footer">Nutrition is personal. All values here are estimates, not medical advice.</footer>
+      </main>
+    </div>
+  </body>
+</html>

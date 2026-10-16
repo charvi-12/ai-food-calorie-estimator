@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}Overview — Platewise{% endblock %}
+{% block page_name %}Overview{% endblock %}
+{% block content %}
+  <section class="welcome-row">
+    <div>
+      <span class="eyebrow"><span class="status-dot"></span>YOUR DAILY SNAPSHOT</span>
+      <h1>A little more <span>mindful.</span></h1>
+      <p class="welcome-copy">A clearer picture of what's on your plate, one meal at a time.</p>
+    </div>
+    <div class="today-chip">
+      <span class="today-chip-icon" aria-hidden="true">◷</span>
+      <span><small>TODAY</small><strong>{{ today }}</strong></span>
+    </div>
+  </section>
+
+  {% if error %}
+    <div class="notice notice-error" role="alert">
+      <span class="notice-icon" aria-hidden="true">!</span>
+      <div><strong>A little hiccup</strong><p>{{ error }}</p>
+        {% if candidates %}
+          <ul class="notice-candidates">{% for candidate in candidates %}<li>{{ candidate.label }} · {{ (candidate.confidence * 100)|round|int }}%</li>{% endfor %}</ul>
+        {% endif %}
+        {% if image_filename %}<a class="notice-link" href="{{ url_for('main.meal_image', filename=image_filename) }}">View the uploaded image</a>{% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  <section class="stats-grid" aria-label="Today's estimated nutrition totals">
+    <article class="stat-card stat-calories">
+      <div class="stat-top"><span>Estimated calories</span><span class="stat-icon calorie-icon">✳</span></div>
+      <div class="stat-value">{{ totals.calories|int }}<span>kcal</span></div>
+      <p class="stat-caption">from {{ meals|length }} meal{% if meals|length != 1 %}s{% endif %} logged today</p>
+      <div class="stat-progress"><span style="width: {{ [totals.calories / 2000 * 100, 100]|min }}%"></span></div>
+      <div class="stat-foot"><span>Daily reference</span><span>2,000 kcal</span></div>
+    </article>
+    <article class="stat-card">
+      <div class="stat-top"><span>Protein</span><span class="stat-icon protein-icon">◈</span></div>
+      <div class="stat-value">{{ totals.protein }}<span>g</span></div>
+      <p class="stat-caption">estimated protein today</p>
+      <div class="stat-progress"><span class="progress-purple" style="width: {{ [totals.protein / 60 * 100, 100]|min }}%"></span></div>
+      <div class="stat-foot"><span>General reference</span><span>60 g</span></div>
+    </article>
+    <article class="stat-card">
+      <div class="stat-top"><span>Carbohydrates</span><span class="stat-icon carb-icon">⌁</span></div>
+      <div class="stat-value">{{ totals.carbohydrates }}<span>g</span></div>
+      <p class="stat-caption">estimated carbohydrates today</p>
+      <div class="stat-progress"><span class="progress-orange" style="width: {{ [totals.carbohydrates / 275 * 100, 100]|min }}%"></span></div>
+      <div class="stat-foot"><span>General reference</span><span>275 g</span></div>
+    </article>
+    <article class="stat-card">
+      <div class="stat-top"><span>Fat</span><span class="stat-icon fat-icon">◉</span></div>
+      <div class="stat-value">{{ totals.fat }}<span>g</span></div>
+      <p class="stat-caption">estimated fat today</p>
+      <div class="stat-progress"><span class="progress-blue" style="width: {{ [totals.fat / 78 * 100, 100]|min }}%"></span></div>
+      <div class="stat-foot"><span>General reference</span><span>78 g</span></div>
+    </article>
+  </section>
+
+  <div class="dashboard-grid">
+    <section class="panel upload-panel" aria-labelledby="upload-heading">
+      <div class="section-heading">
+        <div><span class="eyebrow">A NEW MEAL</span><h2 id="upload-heading">What's on your plate?</h2></div>
+        <span class="heading-emoji" aria-hidden="true">✳</span>
+      </div>
+      <p class="panel-intro">Add a photo and we'll take a closer look. You can always adjust the result.</p>
+      <form action="{{ url_for('main.analyze') }}" method="post" enctype="multipart/form-data" id="analyze-form">
+        <label class="upload-zone" for="image-input" id="upload-zone">
+          <span class="upload-art" aria-hidden="true">
+            <svg viewBox="0 0 48 48" fill="none"><rect x="5" y="9" width="38" height="31" rx="6" stroke="currentColor" stroke-width="2"/><circle cx="17" cy="20" r="3.5" stroke="currentColor" stroke-width="2"/><path d="m8 35 11-10 7 7 6-6 9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 3v11m-4-4 4-4 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <strong id="upload-title">Drop a photo here, or <span>browse</span></strong>
+          <small>JPG, PNG or WebP · Up to 8 MB</small>
+          <input id="image-input" name="image" type="file" accept="image/jpeg,image/png,image/webp">
+        </label>
+        <div class="image-preview" id="image-preview" {% if image_filename %}data-image-url="{{ url_for('main.meal_image', filename=image_filename) }}"{% endif %} hidden>
+          <img id="preview-image" alt="Preview of the food image">
+          <span id="preview-name"></span>
+          <button type="button" class="remove-image" id="remove-image" aria-label="Remove image">×</button>
+        </div>
+        <input type="hidden" name="image_filename" value="{{ image_filename }}">
+        <div class="manual-select">
+          <label for="food-id">Or choose a food manually <span>(optional)</span></label>
+          <select id="food-id" name="food_id">
+            <option value="">Let AI identify the food</option>
+            <optgroup label="Indian favourites">
+              {% for food in foods if food.category == "Indian" %}
+                <option value="{{ food.id }}" {% if result and result.method == "manual" and result.food.id == food.id %}selected{% endif %}>{{ food.name }}</option>
+              {% endfor %}
+            </optgroup>
+            <optgroup label="More foods">
+              {% for food in foods if food.category != "Indian" %}
+                <option value="{{ food.id }}" {% if result and result.method == "manual" and result.food.id == food.id %}selected{% endif %}>{{ food.name }}</option>
+              {% endfor %}
+            </optgroup>
+          </select>
+          <small>Indian dishes are available here for manual estimates; they are not in this model's label set.</small>
+        </div>
+        <button class="button button-primary button-full" type="submit">
+          <span>✨</span> {% if image_filename %}Try again or estimate selected food{% else %}Estimate this meal{% endif %}
+        </button>
+      </form>
+      <div class="model-note"><span class="model-dot"></span>Food-101 image model <span class="note-divider">·</span> You stay in control</div>
+    </section>
+
+    <section class="panel chart-panel" aria-labelledby="chart-heading">
+      <div class="section-heading section-heading-chart">
+        <div><span class="eyebrow">A GENTLE OVERVIEW</span><h2 id="chart-heading">Your week so far</h2></div>
+        <span class="chart-period">7 days <span aria-hidden="true">⌄</span></span>
+      </div>
+      <p class="panel-intro">Daily estimated calories logged in your journal.</p>
+      <div class="chart-container">
+        <canvas id="calorie-chart" aria-label="Estimated calories logged each day for the past seven days" role="img"></canvas>
+      </div>
+      <div class="chart-caption"><span class="chart-legend"></span>Estimated calories logged <span class="chart-note">Not a target</span></div>
+    </section>
+  </div>
+
+  {% if result %}
+    {% set food = result.food %}
+    <section class="panel estimate-panel" id="estimate" aria-labelledby="estimate-heading">
+      <div class="estimate-image">
+        {% if result.image_filename %}
+          <img src="{{ url_for('main.meal_image', filename=result.image_filename) }}" alt="Uploaded {{ food.name }}">
+        {% else %}
+          <span aria-hidden="true">🍽️</span>
+        {% endif %}
+      </div>
+      <div class="estimate-content">
+        <div class="estimate-heading-row">
+          <div><span class="eyebrow">YOUR MEAL ESTIMATE</span><h2 id="estimate-heading">{{ food.name }}</h2></div>
+          <span class="estimate-badge">{% if result.method == "ai" %}AI estimate · {{ (result.confidence * 100)|round|int }}% match{% else %}Manual estimate{% endif %}</span>
+        </div>
+        <p class="estimate-disclaimer">Nutrition values are estimates per <strong>100 g</strong> of this food. Actual values vary with recipe and preparation.</p>
+        {% if result.candidates %}
+          <details class="prediction-details"><summary>Other model predictions</summary>
+            <ul>{% for candidate in result.candidates %}<li>{{ candidate.label }} — {{ (candidate.confidence * 100)|round|int }}%</li>{% endfor %}</ul>
+          </details>
+        {% endif %}
+        <div class="estimate-macros">
+          <div><strong>{{ food.calories|round|int }}</strong><span>kcal <small>per 100 g</small></span></div>
+          <div><strong>{{ food.protein }}</strong><span>protein <small>g</small></span></div>
+          <div><strong>{{ food.carbohydrates }}</strong><span>carbs <small>g</small></span></div>
+          <div><strong>{{ food.fat }}</strong><span>fat <small>g</small></span></div>
+        </div>
+        <form action="{{ url_for('main.save_meal') }}" method="post" class="save-meal-form">
+          <input type="hidden" name="food_id" value="{{ food.id }}">
+          <input type="hidden" name="image_filename" value="{{ result.image_filename }}">
+          <div class="serving-control">
+            <label for="serving-grams">Your portion</label>
+            <div class="grams-input"><input id="serving-grams" type="number" name="serving_grams" min="1" max="5000" step="1" value="100" required><span>g</span></div>
+          </div>
+          <div class="meal-type-control">
+            <label for="meal-type">Meal</label>
+            <select id="meal-type" name="meal_type">
+              {% for meal_type in meal_types %}<option value="{{ meal_type }}">{{ meal_type }}</option>{% endfor %}
+            </select>
+          </div>
+          <button class="button button-primary save-button" type="submit">Add to today's meals <span aria-hidden="true">↗</span></button>
+        </form>
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="panel meals-panel" aria-labelledby="meals-heading">
+    <div class="section-heading">
+      <div><span class="eyebrow">YOUR JOURNAL</span><h2 id="meals-heading">Today's meals</h2></div>
+      <a class="text-link" href="{{ url_for('main.history') }}">View history <span aria-hidden="true">→</span></a>
+    </div>
+    {% if meals %}
+      <div class="meal-list">
+        {% for meal in meals %}
+          <article class="meal-row">
+            <div class="meal-thumb">
+              {% if meal.image_filename %}<img src="{{ url_for('main.meal_image', filename=meal.image_filename) }}" alt="" loading="lazy">
+              {% else %}<span aria-hidden="true">{% if meal.name == "Idli" or meal.name == "Dosa" %}🥞{% elif meal.category == "Indian" %}🍛{% else %}🥗{% endif %}</span>{% endif %}
+            </div>
+            <div class="meal-name"><strong>{{ meal.name }}</strong><span>{{ meal.meal_type }} · {{ meal.serving_grams|round|int }} g</span></div>
+            <div class="meal-calories"><strong>{{ (meal.calories * meal.serving_grams / 100)|round|int }}</strong><span>est. kcal</span></div>
+            <div class="meal-time">{{ meal.created_at[11:16] if meal.created_at|length > 15 else "" }}</div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state"><span class="empty-icon" aria-hidden="true">🥣</span><div><strong>Nothing on the menu just yet</strong><p>Your meals will show up here once you log them.</p></div></div>
+    {% endif %}
+  </section>
+  <p class="data-source">Food recognition by <a href="https://huggingface.co/nateraw/food" target="_blank" rel="noreferrer">Food-101 ViT</a>. Reference nutrition data: <a href="{{ sources.ifct }}" target="_blank" rel="noreferrer">IFCT 2017</a> and <a href="{{ sources.usda }}" target="_blank" rel="noreferrer">USDA FoodData Central</a>. Catalog values are typical estimates per 100 g, not medical advice.</p>
+  <script id="weekly-data" type="application/json">{{ weekly|tojson }}</script>
+{% endblock %}

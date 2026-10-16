@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Meal history — Platewise{% endblock %}
+{% block page_name %}Meal history{% endblock %}
+{% block content %}
+  <section class="welcome-row history-welcome">
+    <div>
+      <span class="eyebrow"><span class="status-dot"></span>YOUR FOOD JOURNAL</span>
+      <h1>A moment to <span>reflect.</span></h1>
+      <p class="welcome-copy">A thoughtful look back at what you've enjoyed.</p>
+    </div>
+    <form class="date-picker" method="get" action="{{ url_for('main.history') }}">
+      <label for="history-date">Choose a day</label>
+      <input id="history-date" type="date" name="date" value="{{ selected_date }}" max="{{ selected_date }}">
+      <button class="button button-secondary" type="submit">View day</button>
+    </form>
+  </section>
+  <section class="history-summary panel">
+    <div><span class="eyebrow">ESTIMATED DAILY TOTAL</span><strong>{{ totals.calories|int }} <small>kcal</small></strong><span>{{ display_date }}</span></div>
+    <div class="history-macros">
+      <span><strong>{{ totals.protein }} g</strong>protein</span>
+      <span><strong>{{ totals.carbohydrates }} g</strong>carbohydrates</span>
+      <span><strong>{{ totals.fat }} g</strong>fat</span>
+    </div>
+  </section>
+  <section class="panel history-panel" aria-labelledby="history-heading">
+    <div class="section-heading">
+      <div><span class="eyebrow">MEALS & PORTIONS</span><h2 id="history-heading">{{ display_date }}</h2></div>
+      <a class="text-link" href="{{ url_for('main.index') }}">Log a meal <span aria-hidden="true">→</span></a>
+    </div>
+    {% if meals %}
+      {% for meal_type in meal_types %}
+        {% set group = meals|selectattr("meal_type", "equalto", meal_type)|list %}
+        {% if group %}
+          <div class="history-group">
+            <div class="history-group-heading"><h3>{{ meal_type }}</h3><span>{{ group|length }} item{% if group|length != 1 %}s{% endif %}</span></div>
+            {% for meal in group %}
+              <article class="meal-row history-meal-row">
+                <div class="meal-thumb">
+                  {% if meal.image_filename %}<img src="{{ url_for('main.meal_image', filename=meal.image_filename) }}" alt="" loading="lazy">
+                  {% else %}<span aria-hidden="true">🍽️</span>{% endif %}
+                </div>
+                <div class="meal-name"><strong>{{ meal.name }}</strong><span>{{ meal.serving_grams|round|int }} g serving · {{ meal.created_at[:16] }}</span></div>
+                <div class="history-row-macros">
+                  <span>{{ (meal.calories * meal.serving_grams / 100)|round|int }} <small>kcal</small></span>
+                  <span>{{ (meal.protein * meal.serving_grams / 100)|round(1) }} g protein</span>
+                  <span>{{ (meal.carbohydrates * meal.serving_grams / 100)|round(1) }} g carbs</span>
+                  <span>{{ (meal.fat * meal.serving_grams / 100)|round(1) }} g fat</span>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      <div class="empty-state"><span class="empty-icon" aria-hidden="true">🌿</span><div><strong>A fresh page</strong><p>No meals were logged on this day. Whenever you're ready, add one from the overview.</p><a class="text-link" href="{{ url_for('main.index') }}">Go to overview <span aria-hidden="true">→</span></a></div></div>
+    {% endif %}
+  </section>
+  <p class="history-disclaimer">All nutrition and calorie values are estimates based on typical recipes and portions.</p>
+{% endblock %}

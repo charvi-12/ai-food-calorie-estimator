@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}A little hiccup — Platewise{% endblock %}
+{% block page_name %}Oops{% endblock %}
+{% block content %}
+  <section class="panel error-page">
+    <span class="error-illustration" aria-hidden="true">🌱</span>
+    <span class="eyebrow">A SMALL DETOUR</span>
+    <h1>A little hiccup.</h1>
+    <p>{{ message }}</p>
+    <a class="button button-primary" href="{{ url_for('main.index') }}">Back to overview</a>
+  </section>
+{% endblock %}
